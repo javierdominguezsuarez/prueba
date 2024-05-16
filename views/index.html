@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Deployment Tracker</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+<div class="container">
+    <h1 class="mt-5">Deployment Tracker</h1>
+
+    <div class="mt-5">
+        <h2>Add Deployment</h2>
+        <div class="mb-3">
+            <label for="server" class="form-label">Server:</label>
+            <input type="text" class="form-control" id="server">
+        </div>
+        <div class="mb-3">
+            <label for="status" class="form-label">Status:</label>
+            <input type="text" class="form-control" id="status">
+        </div>
+        <button onclick="addDeployment()" class="btn btn-primary">Add Deployment</button>
+    </div>
+
+    <div class="mt-5">
+        <h2>Deployments</h2>
+        <table class="table">
+            <thead>
+            <tr>
+                <th>ID</th>
+                <th>Server</th>
+                <th>Status</th>
+                <th>Action</th>
+            </tr>
+            </thead>
+            <tbody id="deployments-list"></tbody>
+        </table>
+    </div>
+
+    <div class="mt-5">
+        <h2>Add Error</h2>
+        <div class="mb-3">
+            <label for="deploymentId" class="form-label">Deployment ID:</label>
+            <input type="text" class="form-control" id="deploymentId">
+        </div>
+        <div class="mb-3">
+            <label for="errorDescription" class="form-label">Description:</label>
+            <textarea class="form-control" id="errorDescription"></textarea>
+        </div>
+        <button onclick="addError()" class="btn btn-primary">Add Error</button>
+    </div>
+
+    <div class="mt-5">
+        <h2>Errors</h2>
+        <table class="table">
+            <thead>
+            <tr>
+                <th>ID</th>
+                <th>Deployment</th>
+                <th>Description</th>
+                <th>Action</th>
+            </tr>
+            </thead>
+            <tbody id="errors-list"></tbody>
+        </table>
+    </div>
+
+    <div class="mt-5">
+        <h2>Add Patch</h2>
+        <div class="mb-3">
+            <label for="errorId" class="form-label">Error ID:</label>
+            <input type="text" class="form-control" id="errorId">
+        </div>
+        <div class="mb-3">
+            <label for="patchDescription" class="form-label">Description:</label>
+            <textarea class="form-control" id="patchDescription"></textarea>
+        </div>
+        <div class="mb-3">
+            <label for="appliedIn" class="form-label">Applied In:</label>
+            <input type="text" class="form-control" id="appliedIn">
+        </div>
+        <button onclick="addPatch()" class="btn btn-primary">Add Patch</button>
+    </div>
+
+    <div class="mt-5">
+        <h2>Patches</h2>
+        <table class="table">
+            <thead>
+            <tr>
+                <th>ID</th>
+                <th>Error ID</th>
+                <th>Description</th>
+                <th>Applied In</th>
+                <th>Action</th>
+            </tr>
+            </thead>
+            <tbody id="patches-list"></tbody>
+        </table>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    
+        <script>
+            const apiUrl = 'http://localhost:3000';
+        
+            async function addDeployment() {
+                const server = document.getElementById('server').value;
+                const status = document.getElementById('status').value;
+        
+                const response = await fetch(`${apiUrl}/deployments`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ server, status })
+                });
+        
+                const result = await response.json();
+                alert('Deployment added: ' + JSON.stringify(result));
+                loadDeployments(); // Reload deployments after adding
+            }
+        
+            // Function to load deployments
+            async function loadDeployments() {
+                const response = await fetch(`${apiUrl}/deployments`);
+                const deployments = await response.json();
+                const tableBody = document.getElementById('deployments-list');
+                tableBody.innerHTML = '';
+                deployments.forEach(deployment => {
+                    const row = tableBody.insertRow();
+                    row.innerHTML = `
+                        <td>${deployment._id}</td>
+                        <td>${deployment.server}</td>
+                        <td>${deployment.status}</td>
+                        <td>
+                            <button class="btn btn-primary edit-btn" onclick="updateDeployment('${deployment._id}')">Edit</button>
+                            <button class=" btn btn-danger delete-btn" onclick="deleteDeployment('${deployment._id}')">Delete</button>
+                        </td>
+                    `;
+                });
+            }
+        
+            // Function to delete a deployment
+            async function deleteDeployment(id) {
+                await fetch(`${apiUrl}/deployments/${id}`, {
+                    method: 'DELETE'
+                });
+                alert('Deployment deleted');
+                loadDeployments(); // Reload deployments after deleting
+            }
+        
+            // Function to update a deployment
+            async function updateDeployment(id) {
+                const server = prompt('Enter the new server:');
+                const status = prompt('Enter the new status:');
+                if (server && status) {
+                    const response = await fetch(`${apiUrl}/deployments/${id}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ server, status })
+                    });
+        
+                    const result = await response.json();
+                    alert('Deployment updated: ' + JSON.stringify(result));
+                    loadDeployments(); // Reload deployments after updating
+                } else {
+                    alert('Please provide both server and status.');
+                }
+            }
+        
+            // Function to add an error
+            async function addError() {
+                const deploymentId = document.getElementById('deploymentId').value;
+                const description = document.getElementById('errorDescription').value;
+        
+                const response = await fetch(`${apiUrl}/errors`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ deploymentId, description })
+                });
+        
+                const result = await response.json();
+                alert('Error added: ' + JSON.stringify(result));
+                loadErrors(); // Reload errors after adding
+            }
+        
+            // Function to load errors
+            async function loadErrors() {
+                const response = await fetch(`${apiUrl}/errors`);
+                const errors = await response.json();
+                const tableBody = document.getElementById('errors-list');
+                tableBody.innerHTML = '';
+                errors.forEach(error => {
+                    const row = tableBody.insertRow();
+                    row.innerHTML = `
+                        <td>${error._id}</td>
+                        <td>${error.deploymentId.server}</td>
+                        <td>${error.description}</td>
+                        <td>
+                            <button class="btn btn-primary edit-btn" onclick="updateError('${error._id}')">Edit</button>
+                            <button class="btn btn-danger delete-btn" onclick="deleteError('${error._id}')">Delete</button>
+                        </td>
+                    `;
+                });
+            }
+        
+            // Function to delete an error
+            async function deleteError(id) {
+                await fetch(`${apiUrl}/errors/${id}`, {
+                    method: 'DELETE'
+                });
+                alert('Error deleted');
+                loadErrors(); // Reload errors after deleting
+            }
+        
+            // Function to update an error
+            async function updateError(id) {
+                const description = prompt('Enter the new description:');
+                if (description) {
+                    const response = await fetch(`${apiUrl}/errors/${id}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ description })
+                    });
+        
+                    const result = await response.json();
+                    alert('Error updated: ' + JSON.stringify(result));
+                    loadErrors(); // Reload errors after updating
+                } else {
+                    alert('Please provide a description.');
+                }
+            }
+        
+            // Function to add a patch
+            async function addPatch() {
+                const errorId = document.getElementById('errorId').value;
+                const patchDescription = document.getElementById('patchDescription').value;
+                const appliedIn = document.getElementById('appliedIn').value;
+        
+                const response = await fetch(`${apiUrl}/patches`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ errorId, patchDescription, appliedIn })
+                });
+        
+                const result = await response.json();
+                alert('Patch added: ' + JSON.stringify(result));
+                loadPatches(); // Reload patches after adding
+            }
+        
+            // Function to load patches
+            async function loadPatches() {
+                const response = await fetch(`${apiUrl}/patches`);
+                const patches = await response.json();
+                const tableBody = document.getElementById('patches-list');
+                tableBody.innerHTML = '';
+                patches.forEach(patch => {
+                    const row = tableBody.insertRow();
+                    row.innerHTML = `
+                        <td>${patch._id}</td>
+                        <td>${patch.errorId.description}</td>
+                        <td>${patch.patchDescription}</td>
+                        <td>${patch.appliedIn.server}</td>
+                        <td>
+                            <button class="btn btn-primary edit-btn" onclick="updatePatch('${patch._id}')">Edit</button>
+                            <button class="btn btn-danger delete-btn" onclick="deletePatch('${patch._id}')">Delete</button>
+                        </td>
+                    `;
+                });
+            }
+        
+            // Function to delete a patch
+            async function deletePatch(id) {
+                await fetch(`${apiUrl}/patches/${id}`, {
+                    method: 'DELETE'
+                });
+                alert('Patch deleted');
+                loadPatches(); // Reload patches after deleting
+            }
+        
+            // Function to update a patch
+            async function updatePatch(id) {
+                const patchDescription = prompt('Enter the new patch description:');
+                const appliedIn = prompt('Enter the new Applied In:');
+                if (patchDescription && appliedIn) {
+                    const response = await fetch(`${apiUrl}/patches/${id}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ patchDescription, appliedIn })
+                    });
+        
+                    const result = await response.json();
+                    alert('Patch updated: ' + JSON.stringify(result));
+                    loadPatches(); // Reload patches after updating
+                } else {
+                    alert('Please provide both patch description and Applied In.');
+                }
+            }
+        
+            // Load data when the page is loaded
+            window.onload = async function () {
+                await loadDeployments();
+                await loadErrors();
+                await loadPatches();
+            };
+        </script>
+        
+</body>
+</html>
